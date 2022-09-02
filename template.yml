@@ -1,0 +1,32 @@
+AWSTemplateFormatVersion: 2010-09-09
+Parameters:
+  AppName:
+    Type: String
+    Default: GS-stream-app
+    Description: Application name
+  Env:
+    Type: String
+    Default: dev
+    Description: Environment
+Resources:
+  KinesisStream:
+    Type: AWS::Kinesis::Stream
+    Properties:
+      Name: 'quest-data-stream'
+      ShardCount: 1
+      RetentionPeriodHours: 24
+  GlueJob:
+    Type: AWS::Glue::Job
+    Properties:
+      Command: 
+        Name: "gluestreaming"
+        ScriptLocation: "s3://dhv-gs-quest/scripts/glue-streaming.py"
+        PythonVersion: "3"
+      Description: Glue Streaming Job to Process Data
+      DefaultArguments:
+        "--arguments": '{"--enable-metrics": "true","--enable-continuous-cloudwatch-log":	"true","--enable-spark-ui": "true","--enable-job-insights": "true"}'
+      GlueVersion: "3.0"
+      MaxRetries: 1
+      NumberOfWorkers: 2
+      Role: arn:aws:iam::209490147253:role/glue-kinesis-full
+      WorkerType: "G.025X"
