@@ -23,8 +23,11 @@ Resources:
         ScriptLocation: "s3://dhv-gs-quest/scripts/glue-streaming.py"
         PythonVersion: "3"
       Description: Glue Streaming Job to Process Data
-      DefaultArguments:
-        "--arguments": '{"--enable-metrics": "true","--enable-continuous-cloudwatch-log":	"true","--enable-spark-ui": "true","--enable-job-insights": "true"}'
+      DefaultArguments: 
+        '--enable-continuous-cloudwatch-log': true
+        '--continuous-log-logGroup': '/aws-glue'
+        '--TempDir': 's3://dhv-gs-quest/temp/'
+        '--enable-job-insights': true
       GlueVersion: "3.0"
       MaxRetries: 1
       NumberOfWorkers: 2
