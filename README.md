@@ -31,4 +31,3 @@ aws kinesis put-record --profile rearc-data-dev --stream-name <stream-name> --pa
 
 ## Output
 ![alt text](info/output.gif)
-In Action
