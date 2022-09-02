@@ -10,6 +10,7 @@ from pyspark.sql import DataFrame, Row
 import datetime
 from awsglue import DynamicFrame
 import json
+
 args = getResolvedOptions(sys.argv, ["JOB_NAME"])
 sc = SparkContext()
 glueContext = GlueContext(sc)
@@ -27,7 +28,7 @@ dataframe_KinesisStream_node1 = glueContext.create_data_frame.from_options(
         "typeOfData": "kinesis",
         "streamARN": "arn:aws:kinesis:us-east-1:209490147253:stream/quest-data-stream",
         "classification": "json",
-        "startingPosition": "earliest",
+        "startingPosition": "latest",
         "inferSchema": "true",
     },
     transformation_ctx="dataframe_KinesisStream_node1",
@@ -35,16 +36,30 @@ dataframe_KinesisStream_node1 = glueContext.create_data_frame.from_options(
 
 logger = glueContext.get_logger()
 
+# Run the transformation for each batch of data
 def processBatch(data_frame, batchId):
     if data_frame.count() > 0:
-        dynamicframe = DynamicFrame.fromDF(data_frame,glueContext,'from_data_frame')
+        # loads the dataframe into a dynamicframe
+        dynamicframe = DynamicFrame.fromDF(data_frame, glueContext, "from_data_frame")
+        # dynamicframe to pandas dataframe
         pandas_dataframe = dynamicframe.toDF().toPandas()
-        assert list(pandas_dataframe.columns) == ['command','dest','source'], pandas_dataframe
-        for index,row in pandas_dataframe.iterrows():
-            if row.command=='copy':
-                file_type = row.source.split('.')[-1]
-                source = spark.read.format(file_type).options(inferSchema='true').load(row.source)
-                source.write.format(file_type).save(row.dest)
+        assert list(pandas_dataframe.columns) == [
+            "command",
+            "dest",
+            "source",
+        ], pandas_dataframe
+        # Iterating through each user request
+        for index, row in pandas_dataframe.iterrows():
+
+            if row.command == "copy":
+                file_type = row.source.split(".")[-1]
+                source = (
+                    spark.read.format(file_type)
+                    .options(inferSchema="true")
+                    .load(row.source)
+                )
+                source.write.format(file_type).mode("overwrite").save(row.dest)
+
 
 glueContext.forEachBatch(
     frame=dataframe_KinesisStream_node1,

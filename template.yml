@@ -1,4 +1,4 @@
-AWSTemplateFormatVersion: 2010-09-09
+AWSTemplateFormatVersion: '2010-09-09'
 Parameters:
   AppName:
     Type: String
@@ -9,27 +9,84 @@ Parameters:
     Default: dev
     Description: Environment
 Resources:
+  DataBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: 'gs-quest-data'
   KinesisStream:
     Type: AWS::Kinesis::Stream
     Properties:
       Name: 'quest-data-stream'
       ShardCount: 1
       RetentionPeriodHours: 24
+  GlueIAM:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: 'glue-stream-role'
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - glue.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              # Allow the Glue service to access the Kinesis stream
+              - Effect: Allow
+                Action: 'kinesis:*'
+                Resource: !GetAtt KinesisStream.Arn
+              # Put logs
+              - Effect: Allow
+                Action: "cloudwatch:PutMetricData"
+                Resource: "*"        
+              # Allow the Glue service to write logs
+              - Effect: Allow
+                Action: 
+                  - "logs:CreateLogStream"
+                  - "logs:CreateLogGroup"
+                  - "logs:PutLogEvents"
+                Resource: 
+                  - "arn:aws:logs:*:209490147253:log-group:/aws-glue/*"
+                  - "arn:aws:logs:*:209490147253:log-group:*:log-stream:*"            
+              # Glue Perms
+              - Effect: Allow
+                Action: "glue:*"
+                Resource: "*"                
+              # Allow the Glue service to read and write in the S3 bucket
+              - Effect: Allow
+                Action: 's3:*'
+                Resource: 
+                  - !GetAtt DataBucket.Arn
+                  - !Join
+                    - ''
+                    - - 'arn:aws:s3:::'
+                      - !Ref DataBucket
+                      - /*
   GlueJob:
     Type: AWS::Glue::Job
     Properties:
+      Name: 'glue-streaming-job'
       Command: 
         Name: "gluestreaming"
-        ScriptLocation: "s3://dhv-gs-quest/scripts/glue-streaming.py"
+        ScriptLocation: "s3://gs-quest-data/scripts/glue-streaming.py"
         PythonVersion: "3"
       Description: Glue Streaming Job to Process Data
       DefaultArguments: 
         '--enable-continuous-cloudwatch-log': true
         '--continuous-log-logGroup': '/aws-glue'
-        '--TempDir': 's3://dhv-gs-quest/temp/'
+        '--TempDir': 's3://gs-quest-data/temp/'
         '--enable-job-insights': true
       GlueVersion: "3.0"
       MaxRetries: 1
       NumberOfWorkers: 2
-      Role: arn:aws:iam::209490147253:role/glue-kinesis-full
+      Role: !GetAtt GlueIAM.Arn
       WorkerType: "G.025X"
+    DependsOn:
+      - KinesisStream
+      - DataBucket
