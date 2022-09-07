@@ -26,7 +26,7 @@ dataframe_KinesisStream_node1 = glueContext.create_data_frame.from_options(
     connection_type="kinesis",
     connection_options={
         "typeOfData": "kinesis",
-        "streamARN": "arn:aws:kinesis:us-east-1:209490147253:stream/quest-data-stream",
+        "streamARN": "arn:aws:kinesis:us-east-1:<acc-number>:stream/quest-data-stream",
         "classification": "json",
         "startingPosition": "latest",
         "inferSchema": "true",

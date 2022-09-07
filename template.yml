@@ -52,8 +52,8 @@ Resources:
                   - "logs:CreateLogGroup"
                   - "logs:PutLogEvents"
                 Resource: 
-                  - "arn:aws:logs:*:209490147253:log-group:/aws-glue/*"
-                  - "arn:aws:logs:*:209490147253:log-group:*:log-stream:*"            
+                  - "arn:aws:logs:*:<acc-number>:log-group:/aws-glue/*"
+                  - "arn:aws:logs:*:<acc-number>:log-group:*:log-stream:*"            
               # Glue Perms
               - Effect: Allow
                 Action: "glue:*"
