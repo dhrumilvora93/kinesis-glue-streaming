@@ -8,7 +8,10 @@ In this exercise, I have a simple command that copies data from one s3 bucket to
 
 Here the two S3 paths would be passed in as a payload in a Kinesis Data Stream and get picked up by the streaming glue job and the paths get passed in as params in the glue job to run it
 
-## Archtechture:
+## Output
+![alt text](info/output.gif)
+
+## Architecture:
 ![alt text](info/image.png)
 Users providing input command to kinesis data streams using aws-cli. A constant runnning glue job will pick up the command perform ETL and load data in S3.
 
@@ -27,7 +30,7 @@ aws cloudformation create-stack --stack-name <stack-name> --capabilities CAPABIL
 
 To delete the stack:
 ```
-aws cloudformation delete-s tack --stack-name <stack-name>
+aws cloudformation delete-stack --stack-name <stack-name>
 ```
 
 Command to pass from Kafka Streams:
@@ -35,5 +38,3 @@ Command to pass from Kafka Streams:
 aws kinesis put-record --profile rearc-data-dev --stream-name <stream-name> --partition-key <partition-key> --data '{"source":"<s3-input-path>","dest":"<s3-destination-path>","command":"copy"}' --cli-binary-format raw-in-base64-out
 ```
 
-## Output
-![alt text](info/output.gif)
